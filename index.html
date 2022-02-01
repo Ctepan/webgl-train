@@ -1,0 +1,63 @@
+<html><head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>JavaScript + Canvas2D</title>
+  <style>
+    html, body, canvas {
+      user-select: none;
+      display: block;
+      height: 100%;
+      width: 100%;
+      margin: 0;
+    }
+    html {
+      background: black;
+    }
+    html, input {
+      font: 3vw/1 sans-serif;
+    }
+    @media all and (max-width: 800px) {
+      html, input {
+        font-size: 24px;
+      }
+    }
+    #count, #fps {
+      display: block;
+      width: 6em;
+      background: rgba(0, 0, 0, .3);
+      border: none;
+      color: rgba(255, 255, 255, .5);
+      padding: 0;
+      text-indent: 1vw;
+    }
+    #count {
+      pointer-events: auto;
+    }
+    #count:hover, #count:focus {
+      color: white;
+      background: rgba(255, 255, 255, .3);
+    }
+    #stats {
+      position: fixed;
+      color: rgba(255, 255, 255, .5);
+      top: 1vw;
+    }
+    #stats {
+      left: 0;
+    }
+    #fps {
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+<canvas width="1358" height="1290"></canvas>
+<script type="module" src="index.js"></script>
+<div id="stats">
+  <input id="count" type="number" value="10000" min="1" step="1">
+  <input id="fps" readonly="" value="">
+</div>
+
+
+</body>
+</html>
