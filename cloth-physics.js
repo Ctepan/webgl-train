@@ -4,7 +4,7 @@ export async function initPhysics() {
   let positions = new Float32Array(0)
   let newPositions = new Float32Array(positions.length)
   let velocities = []
-  let windSourcePoint = [1, 0]
+  let windSourcePoint = [0, 0]
 
   let forces = []
 
@@ -15,25 +15,24 @@ export async function initPhysics() {
   let restLengthDiag = 0;
 
   const gravity = [0, 10.0]
-  const particleMass = 0.1
+  const particleMass = 1.1
   const particleInvMass = 1.0 / particleMass
-  const springK = 1.
-  const deltaT = 0.0001
+  const springK = 10.0
+  const deltaT = 0.00001
   const dampingConst = 5.0
 
   const length = (vec) => {
     return Math.sqrt(vec[0] ** 2 + vec[1] ** 2)
   }
   const normalize = (vec, len) => {
-    if (len === undefined) {
-      const len = length(vec)
-      return len ? [vec[0] / len, vec[1] / len] : [0, 0]
-    }
-
     return len ? [vec[0] / len, vec[1] / len] : [0, 0]
   }
   const sub = (vecA, vecB) => {
     return [vecA[0] - vecB[0], vecA[1] - vecB[1]]
+  }
+  const placeSub = (vecA, vecB) => {
+    vecA[0] = vecA[0] - vecB[0]
+    vecA[1] = vecA[1] - vecB[1]
   }
   const add = (vecA, vecB) => {
     return [vecA[0] + vecB[0], vecA[1] + vecB[1]]
@@ -93,93 +92,64 @@ export async function initPhysics() {
   }
 
   function tick({ nParticles, clothSize }) {
-    for (let i = 0; i < 1000; i++) {
-      moveParticles({ nParticles, clothSize })
-      ;[positions, newPositions] = [newPositions, positions]
-    }
-    // console.log(velocities[64], velocities[65])
+    moveParticles({ nParticles, clothSize })
+    ;[positions, newPositions] = [newPositions, positions]
   }
 
   function fire(x, y) {
-    windSourcePoint = mulConst(normalize([x, y]), dampingConst)
+    const len = length([x, y])
+    windSourcePoint = mulConst(normalize([x, y], len), dampingConst)
   }
 
   function moveParticles({ nParticles }) {
+    forces[0][0][0] = 0
+    forces[0][0][1] = 0
+
     for (let i = 0; i < positions.length; i += particleStep) {
       const p = [positions[i + 0], positions[i + 1]]
 
       const particleFlatIndex = Math.trunc(i / particleStep)
       const x = particleFlatIndex % nParticles.x
-      const y = Math.trunc((particleFlatIndex - x) / nParticles.y)
+      const y = Math.trunc((particleFlatIndex - x) / nParticles.x)
 
-      if (i === 0) {
-        forces[x][y] = [0, 0]
+      if (y === 0 && x < nParticles.x - 1) {
+        forces[y][x + 1][0] = 0
+        forces[y][x + 1][1] = 0
+      }
+
+      if (x === 0 && y < nParticles.y - 1) {
+        forces[y + 1][x][0] = 0
+        forces[y + 1][x][1] = 0
       }
 
       if (y < nParticles.y - 1) {
         let r = sub(getParticle(positions,(particleFlatIndex + nParticles.x) * particleStep), p)
         const rLen = length(r)
         let force = mulConst(normalize(r, rLen), springK * (rLen - restLengthVert))
-        placeAdd(forces[x][y], force)
-        forces[x][y + 1] = force
+        placeAdd(forces[y][x], force)
+        placeSub(forces[y + 1][x], force)
       }
-      // Below
-      if (y > 0) {
-        let r = sub(getParticle(positions,(particleFlatIndex - nParticles.x) * particleStep), p)
-        const rLen = length(r)
-        let force = mulConst(normalize(r, rLen), springK * (rLen - restLengthVert))
-        placeAdd(forces[x][y], force)
-        forces[x][y - 1] = force
-      }
-      // Left
-      if (x > 0) {
-        let r = sub(getParticle(positions,(i - particleStep)), p)
-        const rLen = length(r)
-        let force = mulConst(normalize(r, rLen), springK * (rLen - restLengthHoriz))
-        placeAdd(forces[x][y], force)
-        forces[x - 1][y] = force
-      }
-      // Right
-      if (x < nParticles.x - 1 ) {
+      if (x < nParticles.x - 1) {
         let r = sub(getParticle(positions,(i + particleStep)), p)
         const rLen = length(r)
         let force = mulConst(normalize(r, rLen), springK * (rLen - restLengthHoriz))
-        placeAdd(forces[x][y], force)
-        forces[x + 1][y] = force
+        placeAdd(forces[y][x], force)
+        placeSub(forces[y][x + 1], force)
       }
-
-      // Diagonals
-      // Upper-left
-      if (x > 0 && y < nParticles.y - 1 ) {
-        let r = sub(getParticle(positions,(particleFlatIndex + nParticles.x - 1) * particleStep), p)
-        const rLen = length(r)
-        let force = mulConst(normalize(r, rLen), springK * (rLen - restLengthDiag))
-        placeAdd(forces[x][y], force)
-        forces[x - 1][y + 1] = force
-      }
-      // Upper-right
       if (x < nParticles.x - 1 && y < nParticles.y - 1) {
         let r = sub(getParticle(positions,(particleFlatIndex + nParticles.x + 1) * particleStep), p)
         const rLen = length(r)
         let force = mulConst(normalize(r, rLen), springK * (rLen - restLengthDiag))
-        placeAdd(forces[x][y], force)
-        forces[x + 1][y + 1] = force
+        placeAdd(forces[y][x], force)
+        forces[y + 1][x + 1] = sub([0, 0], force)
+        // placeSub(forces[y + 1][x + 1], force)
       }
-      // lower -left
-      if (x > 0 && y > 0) {
-        let r = sub(getParticle(positions,(particleFlatIndex - nParticles.x - 1) * particleStep), p)
-        const rLen = length(r)
-        let force = mulConst(normalize(r, rLen), springK * (rLen - restLengthDiag))
-        placeAdd(forces[x][y], force)
-        forces[x - 1][y - 1] = force
-      }
-      // lower-right
       if (x < nParticles.x - 1 && y > 0) {
         let r = sub(getParticle(positions,(particleFlatIndex - nParticles.x + 1) * particleStep), p)
         const rLen = length(r)
         let force = mulConst(normalize(r, rLen), springK * (rLen - restLengthDiag))
-        placeAdd(forces[x][y], force)
-        forces[x + 1][y - 1] = force
+        placeAdd(forces[y][x], force)
+        placeSub(forces[y - 1][x + 1], force)
       }
     }
 
@@ -190,16 +160,16 @@ export async function initPhysics() {
 
       const particleFlatIndex = Math.trunc(i / particleStep)
       const x = particleFlatIndex % nParticles.x
-      const y = Math.trunc((particleFlatIndex - x) / nParticles.y)
+      const y = Math.trunc((particleFlatIndex - x) / nParticles.x)
 
       if (
-        (y === 0) && (
-          x === 0 ||
-          x === nParticles.x / 5 ||
-          x === nParticles.x * 2 / 5 ||
-          x === nParticles.x * 3 / 5 ||
-          x === nParticles.x * 4 / 5 ||
-          x === nParticles.x - 1
+        (x === 0) && (
+          y === 0 ||
+          y === nParticles.y / 5 ||
+          y === nParticles.y * 2 / 5 ||
+          y === nParticles.y * 3 / 5 ||
+          y === nParticles.y * 4 / 5 ||
+          y === nParticles.y - 1
         )
       ) {
         newPositions[i + 0] = p[0]
@@ -212,10 +182,10 @@ export async function initPhysics() {
       }
 
       let force = mulConst(gravity, particleMass);
-      placeAdd(force, forces[x][y])
+      placeAdd(force, forces[y][x])
       placeAdd(force, windSourcePoint)
 
-      let a = [force[0] * particleInvMass, force[1] * particleInvMass];
+      let a = [force[0] * particleInvMass * 10000000, force[1] * particleInvMass * 10000000];
 
       function f(x, y) {
         return y + x * deltaT;
