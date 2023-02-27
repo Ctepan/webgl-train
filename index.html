@@ -21,14 +21,34 @@
         font-size: 24px;
       }
     }
-    #count, #fps {
+    #count, #fps, .checkbox_label {
       display: block;
-      width: 6em;
+      width: 100%;
       background: rgba(0, 0, 0, .3);
       border: none;
       color: rgba(255, 255, 255, .5);
       padding: 0;
       text-indent: 1vw;
+    }
+    .checkbox_label {
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.7em;
+      line-height: 1.3em;
+      text-indent: initial;
+      padding: 0.5vw 1vw;
+      box-sizing: border-box;
+    }
+    .checkbox_label:hover {
+      color: white;
+      background: rgba(255, 255, 255, .3);
+    }
+    .checkbox {
+      width: 30px;
+      height: 30px;
+      flex-shrink: 0;
     }
     #count {
       pointer-events: auto;
@@ -41,6 +61,9 @@
       position: fixed;
       color: rgba(255, 255, 255, .5);
       top: 1vw;
+      width: 6em;
+      display: flex;
+      flex-direction: column;
     }
     #stats {
       left: 0;
@@ -55,6 +78,14 @@
 <script type="module" src="index.js"></script>
 <div id="stats">
   <input id="count" type="number" value="10000" min="1" step="1">
+  <label class="checkbox_label">
+    Quad tree
+    <input class="checkbox" id="quad_tree" type="checkbox">
+  </label>
+  <label class="checkbox_label" title="Draws last created tree">
+    Draw quad tree
+    <input class="checkbox" id="quad_tree_render" type="checkbox">
+  </label>
   <input id="fps" readonly="" value="">
 </div>
 

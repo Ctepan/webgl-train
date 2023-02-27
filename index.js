@@ -1,10 +1,16 @@
 import { initPhysics } from './physics.js';
 import { initRenderer } from './renderer-webgl.js';
+import { AABB, QuadTree, Vector2 } from './collision-entitites.js';
 
 async function main() {
   const canvas = document.querySelector('canvas');
   const countInput = document.querySelector('#count');
   const fpsInput = document.querySelector('#fps');
+  const quadTreeCheckbox = document.querySelector('#quad_tree');
+  const quadTreeRenderCheckbox = document.querySelector('#quad_tree_render');
+
+  let shouldCreateQuadTree = false;
+  let shouldShowQuadTree = false;
 
   let particlesCount;
   let canvasWidth;
@@ -33,6 +39,22 @@ async function main() {
     inputHandler();
   }
 
+  {
+    const quadTreeCheckboxHandler = () => {
+      shouldCreateQuadTree = quadTreeCheckbox.checked;
+    }
+    quadTreeCheckbox.addEventListener('change', quadTreeCheckboxHandler);
+    quadTreeCheckboxHandler();
+  }
+
+  {
+    const quadTreeRenderCheckboxHandler = () => {
+      shouldShowQuadTree = quadTreeRenderCheckbox.checked;
+    }
+    quadTreeRenderCheckbox.addEventListener('change', quadTreeRenderCheckboxHandler);
+    quadTreeRenderCheckboxHandler();
+  }
+
   let num = 0;
   {
     const clickHandler = (e) => {
@@ -42,9 +64,14 @@ async function main() {
     canvas.addEventListener('click', clickHandler);
   }
 
+  const createQTree = () => {
+    return new QuadTree(new AABB(new Vector2(0, 0), new Vector2(canvasWidth / 2, canvasHeight / 2)))
+  }
+
   {
     let lastTs = 0;
     let framesDrawn = 0;
+    let qTree;
 
     const frame = (timestamp) => {
       requestAnimationFrame(frame);
@@ -56,7 +83,23 @@ async function main() {
         tick(particlesCount);
       }
 
-      render(getData(), particlesCount, canvasWidth, canvasHeight);
+      const data = getData()
+
+      if (shouldCreateQuadTree) {
+        qTree = createQTree()
+        const len = particlesCount * 4
+
+        for (let ptr = 0; ptr < len; ptr += 4) {
+          qTree.insert(new Vector2(data[ptr + 0], data[ptr + 1]))
+        }
+      }
+
+      let qTreeToRender = null
+      if (shouldShowQuadTree) {
+        qTreeToRender = qTree
+      }
+
+      render(data, particlesCount, canvasWidth, canvasHeight, qTreeToRender);
 
       framesDrawn++;
       if (timestamp > lastTs + 2000) {
