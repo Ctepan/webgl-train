@@ -42,6 +42,7 @@ export class AABB {
 }
 
 const CAPACITY = 4
+const MIN_RADIUS = 1
 
 export class QuadTree {
   node1 = null
@@ -60,7 +61,7 @@ export class QuadTree {
       return false
     }
 
-    if (this.points.length < CAPACITY) {
+    if (this.points.length < CAPACITY || this.boundary.radius.x < MIN_RADIUS || this.boundary.radius.y < MIN_RADIUS) {
       this.points.push(p)
 
       return true
